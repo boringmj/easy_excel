@@ -9,6 +9,9 @@ use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 
 class Main {
     static public function run() {
+        if (!is_file('cache/test.xlsx')) {
+            throw new \Exception(' cache/test.xlsx 文件不存在！');
+        }
         $spreadsheet=IOFactory::load('cache/test.xlsx');
         $worksheet=$spreadsheet->getActiveSheet();
         $lastRow=$worksheet->getHighestRow();
