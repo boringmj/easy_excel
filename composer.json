@@ -1,0 +1,19 @@
+{
+    "name": "boringmj/excel",
+    "type": "project",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Boringmj\\Excel\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "boringmj",
+            "email": "3239957605@qq.com"
+        }
+    ],
+    "require": {
+        "phpoffice/phpspreadsheet": "^1.28"
+    }
+}
