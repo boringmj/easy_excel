@@ -170,7 +170,10 @@ abstract class Excel implements OperateExcel,CreateExcel {
                 return true;
             }
             return false;
-        } catch (Exception) {
+        } catch (Exception $error) {
+            // 判断错误类是否为 ExcelFileException,如果是则抛出,否则抛出 ExcelFileException
+            if ($error instanceof ExcelFileException)
+                throw $error;
             throw new ExcelFileException($this->_excel_path,ExcelFileException::EXCEL_FILE_NOT_WRITABLE);
         }
     }
