@@ -73,15 +73,12 @@ class Excel extends AbstractExcel {
      * @return array
      */
     public function read():array {
-        $lastRow=$this->worksheet->getHighestRow();
-        $lastColumn=$this->worksheet->getHighestColumn();
-        $lastColumnIndex=self::columnIndexFromString($lastColumn);
+        $lastRow=$this->getLastRow();
+        $lastColumn=$this->getLastColumn();
         $data=array();
         for ($row=1;$row<=$lastRow;$row++)
-            for ($column=1;$column<=$lastColumnIndex;$column++) {
-                $cellAddress=self::stringFromColumnIndex($column).$row;
-                $cell=$this->worksheet->getCell($cellAddress);
-                $value=$cell->getValue();
+            for ($column=1;$column<=$lastColumn;$column++) {
+                $value=$this->getCellValueByRowColumn($row,$column);
                 if ($this->_return_null_cell==false&&$value==null)
                     continue;
                 $data[$row][$column]=$value;

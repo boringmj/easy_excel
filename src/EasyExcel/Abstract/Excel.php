@@ -11,6 +11,7 @@ use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
+use PhpOffice\PhpSpreadsheet\Cell\Cell;
 
 /**
  * 操作 Excel 抽象类
@@ -227,14 +228,11 @@ abstract class Excel implements OperateExcel,CreateExcel {
      * @return void
      */
     final protected function reloadPointer():void {
-        $last_row=$this->worksheet->getHighestRow();
+        $last_row=$this->getLastRow();
         // 如果最后一行等于1,则判断第一行是否有数据,如果有数据则指针移动到第二行第一个单元格,否则指针移动到第一行第一个单元格
         if ($last_row==1) {
-            $last_column=$this->worksheet->getHighestColumn();
-            $last_column_index=self::columnIndexFromString($last_column);
-            $cellAddress=self::stringFromColumnIndex($last_column_index).$last_row;
-            $cell=$this->worksheet->getCell($cellAddress);
-            $value=$cell->getValue();
+            $last_column=$this->getLastColumn();
+            $value=$this->getCellValueByRowColumn(1,$last_column);
             $last_row=$value==null?0:1;
         }
         $this->pointer['row']=$last_row+1;
@@ -264,6 +262,57 @@ abstract class Excel implements OperateExcel,CreateExcel {
         $this->pointer['row']=$row>0?$row:1;
         $this->pointer['column']=$column>0?$column:1;
         return $this;
+    }
+
+    /**
+     * 获取 Excel 最后一行的行号
+     * 
+     * @return int
+     */
+    final public function getLastRow():int {
+        return $this->worksheet->getHighestRow();
+    }
+
+    /**
+     * 获取 Excel 最后一列的列号
+     * 
+     * @return int
+     */
+    final public function getLastColumn():int {
+        $last_column=$this->worksheet->getHighestColumn();
+        return self::columnIndexFromString($last_column);
+    }
+
+    /**
+     * 获取某个单元格
+     * 
+     * @param string $cell_address 单元格地址
+     * @return Cell
+     */
+    final public function getCell(string $cell_address):Cell {
+        return $this->worksheet->getCell($cell_address);
+    }
+
+    /**
+     * 获取某个单元格的值
+     * 
+     * @param string $cell_address 单元格地址
+     * @return mixed
+     */
+    final public function getCellValue(string $cell_address):mixed {
+        return $this->getCell($cell_address)->getValue();
+    }
+
+    /**
+     * 通过行列号获取某个单元格的值
+     * 
+     * @param int $row 行
+     * @param int $column 列
+     * @return mixed
+     */
+    final public function getCellValueByRowColumn(int $row,int $column):mixed {
+        $cellAddress=self::stringFromColumnIndex($column).$row;
+        return $this->getCellValue($cellAddress);
     }
 
 }
