@@ -1,18 +1,12 @@
 {
-    "name": "boringmj/excel",
+    "name": "boringmj/easy_excel",
     "type": "project",
     "license": "MIT",
     "autoload": {
         "psr-4": {
-            "Boringmj\\Excel\\": "src/"
+            "Boringmj\\": "src/"
         }
     },
-    "authors": [
-        {
-            "name": "boringmj",
-            "email": "3239957605@qq.com"
-        }
-    ],
     "require": {
         "phpoffice/phpspreadsheet": "^1.28"
     }

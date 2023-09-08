@@ -2,6 +2,6 @@
 
 require_once __DIR__.'/vendor/autoload.php';
 
-use Boringmj\Excel\Main;
+use Boringmj\Main;
 
 Main::run();
