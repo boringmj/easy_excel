@@ -7,8 +7,8 @@ namespace Boringmj\EasyExcel\Interface;
  * 
  * @package Boringmj\EasyExcel\Interface
  * @since 1.0.0
- * @version 1.0.0
- * @method bool write(array ...$data) 将数据写入 Excel 文件
+ * @version 1.0.1
+ * @method self write(mixed ...$data) 将数据写入 Excel 文件
  * @method bool save() 将数据保存到 Excel 文件
  * @method array read() 从 Excel 文件中读取数据
  * @method self bold(array ...$data) 设置单元格对齐方式
@@ -20,10 +20,10 @@ interface OperateExcel {
      * 将数据写入 Excel 文件
      * 
      * @param string $path Excel文件路径
-     * @param array ...$data 数据
-     * @return bool
+     * @param mixed ...$data 数据
+     * @return self
      */
-    public function write(array ...$data):bool;
+    public function write(mixed ...$data):self;
     
     /**
      * 将数据保存到 Excel 文件

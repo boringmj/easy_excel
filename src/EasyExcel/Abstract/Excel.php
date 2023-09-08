@@ -17,7 +17,7 @@ use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
  * 
  * @package Boringmj\EasyExcel\Abstract
  * @since 1.0.0
- * @version 1.0.0
+ * @version 1.0.1
  * @see \Boringmj\EasyExcel\Interface\Excel
  * @property string $_excel_path Excel 文件路径
  */
@@ -71,6 +71,16 @@ abstract class Excel implements OperateExcel,CreateExcel {
     );
 
     /**
+     * 指针位置
+     * 
+     * @var array
+     */
+    protected $pointer=array(
+        'row'=>1,
+        'column'=>1
+    );
+
+    /**
      * 构造函数
      * 
      * @param string $excel_path Excel 文件路径
@@ -91,24 +101,25 @@ abstract class Excel implements OperateExcel,CreateExcel {
      */
     protected function load():self {
         // 判断 Excel 文件是否存在,不存在则创建
-        if(!file_exists($this->_excel_path)) {
+        if (!file_exists($this->_excel_path)) {
             // 判断是否允许写入
-            if(!in_array($this->open_mode,$this->allow_write_mode))
+            if (!in_array($this->open_mode,$this->allow_write_mode))
                 throw new ExcelFileException($this->_excel_path,ExcelFileException::EXCEL_FILE_ONLY_READ);
             $this->create($this->_excel_path);
         }
         else {
             // 判断 Excel 文件是否可读
-            if(!is_readable($this->_excel_path))
+            if (!is_readable($this->_excel_path))
                 throw new ExcelFileException($this->_excel_path,ExcelFileException::EXCEL_FILE_NOT_READABLE);
             // 判断是否需要检查 Excel 文件是否可写
-            if(in_array($this->open_mode,$this->allow_write_mode))
+            if (in_array($this->open_mode,$this->allow_write_mode))
                 // 判断 Excel 文件是否可写
-                if(!is_writable($this->_excel_path))
+                if (!is_writable($this->_excel_path))
                     throw new ExcelFileException($this->_excel_path,ExcelFileException::EXCEL_FILE_NOT_WRITABLE);
             $this->spreadsheet=IOFactory::load($this->_excel_path);
             $this->worksheet=$this->spreadsheet->getActiveSheet();
         }
+        $this->reloadPointer();
         return $this;
     }
 
@@ -121,19 +132,20 @@ abstract class Excel implements OperateExcel,CreateExcel {
      */
     public function create(string $excel_path):bool {
         // 判断打开模式是否允许写入
-        if(!in_array($this->open_mode,$this->allow_write_mode))
+        if (!in_array($this->open_mode,$this->allow_write_mode))
             throw new ExcelFileException($excel_path,ExcelFileException::EXCEL_FILE_ONLY_READ);
         // 判断路径的上级目录是否存在且可写
         $dir=dirname($excel_path);
-        if(!is_dir($dir))
+        if (!is_dir($dir))
             // 这里使用 “@” 符号来抑制错误,如果创建失败会在下面的判断中抛出异常
             @mkdir($dir,0755,true);
-        if(!is_writable($dir))
+        if (!is_writable($dir))
             throw new ExcelFileException($excel_path,ExcelFileException::EXCEL_FILE_NOT_WRITABLE);
         $this->spreadsheet=new Spreadsheet();
         $this->worksheet=$this->spreadsheet->getActiveSheet();
         $writer=new Xlsx($this->spreadsheet);
         $writer->save($excel_path);
+        $this->reloadPointer();
         return true;
     }
 
@@ -145,9 +157,10 @@ abstract class Excel implements OperateExcel,CreateExcel {
     public function save():bool {
         try {
             // 判断是否允许写入
-            if(in_array($this->open_mode,$this->allow_write_mode)) {
+            if (in_array($this->open_mode,$this->allow_write_mode)) {
                 $writer=new Xlsx($this->spreadsheet);
                 $writer->save($this->_excel_path);
+                $this->reloadPointer();
                 return true;
             }
             return false;
@@ -159,10 +172,10 @@ abstract class Excel implements OperateExcel,CreateExcel {
     /**
      * 通过字符串获取列索引
      * 
-     * @param string $column_address 列索引
+     * @param string $column_address 列地址
      * @return string
      */
-    static public function columnIndexFromString(string $column_address):string {
+    final static public function columnIndexFromString(string $column_address):string {
         return Coordinate::columnIndexFromString($column_address);
     }
 
@@ -172,8 +185,51 @@ abstract class Excel implements OperateExcel,CreateExcel {
      * @param int $column_letter 列索引
      * @return string
      */
-    static public function stringFromColumnIndex(int $column_letter):string {
+    final static public function stringFromColumnIndex(int $column_letter):string {
         return Coordinate::stringFromColumnIndex($column_letter);
+    }
+
+    /**
+     * 提供行列号设置某个单元格的值
+     * 
+     * @param int $row 行
+     * @param int $column 列
+     * @param mixed $value 值
+     * @return void
+     */
+    final protected function setCellValueByRowColumn(int $row,int $column,mixed $value):void {
+        $cellAddress=self::stringFromColumnIndex($column).$row;
+        $this->worksheet->setCellValue($cellAddress,$value);
+    }
+
+    /**
+     * 设置某个单元格的值
+     * 
+     * @param string $cell_address 单元格地址
+     * @param mixed $value 值
+     */
+    final protected function setCellValue(string $cell_address,mixed $value):void {
+        $this->worksheet->setCellValue($cell_address,$value);
+    }
+
+    /**
+     * 重新计算指针位置
+     * 
+     * @return void
+     */
+    final protected function reloadPointer():void {
+        $last_row=$this->worksheet->getHighestRow();
+        // 如果最后一行等于1,则判断第一行是否有数据,如果有数据则指针移动到第二行第一个单元格,否则指针移动到第一行第一个单元格
+        if ($last_row==1) {
+            $last_column=$this->worksheet->getHighestColumn();
+            $last_column_index=self::columnIndexFromString($last_column);
+            $cellAddress=self::stringFromColumnIndex($last_column_index).$last_row;
+            $cell=$this->worksheet->getCell($cellAddress);
+            $value=$cell->getValue();
+            $last_row=$value==null?0:1;
+        }
+        $this->pointer['row']=$last_row+1;
+        $this->pointer['column']=1;
     }
 
 }

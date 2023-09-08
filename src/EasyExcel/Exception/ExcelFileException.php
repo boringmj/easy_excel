@@ -60,7 +60,7 @@ class ExcelFileException extends Exception {
      */
     public function __construct(string $excel_path=null,int $code=0,?callable $callback=null,mixed ...$args) {
         $this->_excel_path=$excel_path;
-        if(!isset(self::$error_message[$code]))
+        if (!isset(self::$error_message[$code]))
             $code=self::EXCEL_FILE_ERROR;
         $message=$excel_path?self::$error_message[$code].': '.$excel_path:self::$error_message[$code];
         parent::__construct($message,$code,$callback,...$args);
