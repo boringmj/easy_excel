@@ -30,7 +30,20 @@ class Main {
                 ['a','b','c'],
                 ['d','e','f']
             ])->save();
+            // 下面是一个复杂的例子
+            // $Excel->write('A1',array(
+            //     'A2'=>'A2',
+            //     'A3'
+            // ),array(
+            //     ['A4','B4'],
+            //     'A5',
+            //     'A6'=>'A6'
+            // ))->save();
             print_r($Excel->read());
+            // 如果需要返回空单元格,则使用下面的方式设置(注意,设置后只在读取时有效,读取完毕后会自动设置为 false)
+            // Excel::setReturnNullCell(bool $return_null_cell=true);
+            // 例如:
+            // print_r($Excel->setReturnNullCell()->read());
         } catch (Exception $error) {
             echo  $error->getMessage().PHP_EOL;
         }

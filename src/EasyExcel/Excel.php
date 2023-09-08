@@ -14,6 +14,13 @@ use Boringmj\EasyExcel\Abstract\Excel as AbstractExcel;
 class Excel extends AbstractExcel {
 
     /**
+     * 读取时是否返回空单元格
+     * 
+     * @var bool
+     */
+    private bool $_return_null_cell=false;
+
+    /**
      * 向 Excel 文件写入数据
      * 
      * @param mixed ...$data 要写入的数据
@@ -32,20 +39,31 @@ class Excel extends AbstractExcel {
                         // 判断值是不是数组
                         if (is_array($_value))
                             foreach ($_value as $_) {
-                                $this->setCellValueByRowColumn($this->pointer['row'],$this->pointer['column'],$_);
-                                $this->pointer['column']++;
+                                $this->setCellValueByRowColumn($this->getPointer('row'),$this->getPointer('column'),$_);
+                                $this->setPointer($this->getPointer('row'),$this->getPointer('column')+1);
                             }
                         else
                             // 如果是字符串,则在当前指针位置写入然后指针移动到下一行第一个单元格
-                            $this->setCellValueByRowColumn($this->pointer['row'],$this->pointer['column'],$_value);
+                            $this->setCellValueByRowColumn($this->getPointer('row'),$this->getPointer('column'),$_value);
                     }
                     $this->reloadPointer();
                 }
             } else
                 // 如果是字符串,则在当前指针位置写入然后指针移动到下一行第一个单元格
-                $this->setCellValueByRowColumn($this->pointer['row'],$this->pointer['column'],$value);
+                $this->setCellValueByRowColumn($this->getPointer('row'),$this->getPointer('column'),$value);
             $this->reloadPointer();
         }
+        return $this;
+    }
+
+    /**
+     * 零时设置读取时是否返回空单元格(在读取完毕后会自动设置为 false)
+     * 
+     * @param bool $return_null_cell 是否返回空单元格
+     * @return self
+     */
+    public function returnNullCell(bool $return_null_cell=true):self {
+        $this->_return_null_cell=$return_null_cell;
         return $this;
     }
 
@@ -64,8 +82,11 @@ class Excel extends AbstractExcel {
                 $cellAddress=self::stringFromColumnIndex($column).$row;
                 $cell=$this->worksheet->getCell($cellAddress);
                 $value=$cell->getValue();
+                if ($this->_return_null_cell==false&&$value==null)
+                    continue;
                 $data[$row][$column]=$value;
             }
+        $this->returnNullCell(false);
         return $data;
     }
 

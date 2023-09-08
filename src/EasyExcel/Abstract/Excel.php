@@ -153,11 +153,17 @@ abstract class Excel implements OperateExcel,CreateExcel {
      * 保存 Excel 文件
      * 
      * @return bool
+     * @throws ExcelFileException
      */
     public function save():bool {
         try {
             // 判断是否允许写入
             if (in_array($this->open_mode,$this->allow_write_mode)) {
+                // 尝试以可读模式打开 Excel 文件, 如果打开失败则抛出异常
+                @$excel_file=fopen($this->_excel_path,'r+');
+                if ($excel_file==false)
+                    throw new ExcelFileException($this->_excel_path,ExcelFileException::EXCEL_FILE_LOCKED);
+                fclose($excel_file);
                 $writer=new Xlsx($this->spreadsheet);
                 $writer->save($this->_excel_path);
                 $this->reloadPointer();
@@ -165,7 +171,7 @@ abstract class Excel implements OperateExcel,CreateExcel {
             }
             return false;
         } catch (Exception) {
-            return false;
+            throw new ExcelFileException($this->_excel_path,ExcelFileException::EXCEL_FILE_NOT_WRITABLE);
         }
     }
 
@@ -230,6 +236,31 @@ abstract class Excel implements OperateExcel,CreateExcel {
         }
         $this->pointer['row']=$last_row+1;
         $this->pointer['column']=1;
+    }
+
+    /**
+     * 获取指针位置
+     * 
+     * @param string $key 指针键名(默认为全部,可选值为:row,column)
+     * @return array|int
+     */
+    final public function getPointer(string $key=null):array|int {
+        if ($key==null)
+            return $this->pointer;
+        return $this->pointer[$key];
+    }
+
+    /**
+     * 设置指针位置
+     * 
+     * @param int $row 行
+     * @param int $column 列
+     * @return self
+     */
+    final public function setPointer(int $row,int $column=1):self {
+        $this->pointer['row']=$row>0?$row:1;
+        $this->pointer['column']=$column>0?$column:1;
+        return $this;
     }
 
 }
