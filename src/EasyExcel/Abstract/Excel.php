@@ -108,24 +108,22 @@ abstract class Excel implements OperateExcel,CreateExcel {
                 throw new ExcelFileException($this->_excel_path,ExcelFileException::EXCEL_FILE_ONLY_READ);
             $this->create($this->_excel_path);
         }
-        else {
-            // 判断 Excel 文件是否可读
-            if (!is_readable($this->_excel_path))
-                throw new ExcelFileException($this->_excel_path,ExcelFileException::EXCEL_FILE_NOT_READABLE);
-            // 判断是否需要检查 Excel 文件是否可写
-            if (in_array($this->open_mode,$this->allow_write_mode))
-                // 判断 Excel 文件是否可写
-                if (!is_writable($this->_excel_path))
-                    throw new ExcelFileException($this->_excel_path,ExcelFileException::EXCEL_FILE_NOT_WRITABLE);
-            $this->spreadsheet=IOFactory::load($this->_excel_path);
-            $this->worksheet=$this->spreadsheet->getActiveSheet();
-        }
+        // 判断 Excel 文件是否可读
+        if (!is_readable($this->_excel_path))
+            throw new ExcelFileException($this->_excel_path,ExcelFileException::EXCEL_FILE_NOT_READABLE);
+        // 判断是否需要检查 Excel 文件是否可写
+        if (in_array($this->open_mode,$this->allow_write_mode))
+            // 判断 Excel 文件是否可写
+            if (!is_writable($this->_excel_path))
+                throw new ExcelFileException($this->_excel_path,ExcelFileException::EXCEL_FILE_NOT_WRITABLE);
+        $this->spreadsheet=IOFactory::load($this->_excel_path);
+        $this->worksheet=$this->spreadsheet->getActiveSheet();
         $this->reloadPointer();
         return $this;
     }
 
     /**
-     * 创建 Excel 文件(创建新文件会导致当前加载的对象被覆盖)
+     * 创建 Excel 文件
      * 
      * @param string $excel_path Excel 文件路径
      * @return bool
@@ -142,11 +140,9 @@ abstract class Excel implements OperateExcel,CreateExcel {
             @mkdir($dir,0755,true);
         if (!is_writable($dir))
             throw new ExcelFileException($excel_path,ExcelFileException::EXCEL_FILE_NOT_WRITABLE);
-        $this->spreadsheet=new Spreadsheet();
-        $this->worksheet=$this->spreadsheet->getActiveSheet();
-        $writer=new Xlsx($this->spreadsheet);
+        $spreadsheet=new Spreadsheet();
+        $writer=new Xlsx($spreadsheet);
         $writer->save($excel_path);
-        $this->reloadPointer();
         return true;
     }
 
