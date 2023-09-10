@@ -18,9 +18,8 @@ use PhpOffice\PhpSpreadsheet\Cell\Cell;
  * 
  * @package Boringmj\EasyExcel\Abstract
  * @since 1.0.0
- * @version 1.0.1
+ * @version 1.0.2
  * @see \Boringmj\EasyExcel\Interface\Excel
- * @property string $_excel_path Excel 文件路径
  */
 abstract class Excel implements OperateExcel,CreateExcel {
 
@@ -35,6 +34,11 @@ abstract class Excel implements OperateExcel,CreateExcel {
     const EXCEL_READ_WRITE=2;
 
     /**
+     * 虚拟模式(该模式下无法保存和加载excel文件)
+     */
+    const EXCEL_VIRTUAL=3;
+
+    /**
      * Excel 文件路径
      * 
      * @var string
@@ -46,29 +50,35 @@ abstract class Excel implements OperateExcel,CreateExcel {
      * 
      * @var Spreadsheet
      */
-    protected Spreadsheet $spreadsheet;
+    protected Spreadsheet $_spreadsheet;
 
     /**
      * Worksheet 对象
      * 
      * @var Worksheet
      */
-    protected Worksheet $worksheet;
+    protected Worksheet $_worksheet;
 
     /**
-     * 打开模式
+     * 当前打开模式
      * 
      * @var int
      */
-    protected int $open_mode;
+    protected int $_open_mode;
+
+    /**
+     * 默认打开模式
+     */
+    protected int $_default_open_mode;
 
     /**
      * 允许写入的模式
      * 
      * @var array
      */
-    protected array $allow_write_mode=array(
-        self::EXCEL_READ_WRITE
+    protected array $_allow_write_mode=array(
+        self::EXCEL_READ_WRITE, // 读写模式
+        self::EXCEL_VIRTUAL // 虚拟模式也允许写入, 只需要传入合法的路径即可
     );
 
     /**
@@ -76,7 +86,7 @@ abstract class Excel implements OperateExcel,CreateExcel {
      * 
      * @var array
      */
-    protected $pointer=array(
+    protected $_pointer=array(
         'row'=>1,
         'column'=>1
     );
@@ -84,29 +94,41 @@ abstract class Excel implements OperateExcel,CreateExcel {
     /**
      * 构造函数
      * 
-     * @param string $excel_path Excel 文件路径
-     * @param int $open_mode 打开模式(默认为读写模式,可选值为:EXCEL_ONLY_READ,EXCEL_READ_WRITE)
+     * @param string $excel_path Excel 文件路径,如果不提供则自动切换到虚拟模式
+     * @param int $open_mode 打开模式(默认为读写模式,可选值为:EXCEL_ONLY_READ,EXCEL_READ_WRITE,ECEL_VIRTUAL)
      * @throws ExcelFileException
      */
-    public function __construct(protected string $excel_path,int $open_mode=self::EXCEL_READ_WRITE) {
+    public function __construct(protected string $excel_path='',int $open_mode=self::EXCEL_READ_WRITE) {
         $this->_excel_path=$excel_path;
-        $this->open_mode=$open_mode;
+        $this->_default_open_mode=$open_mode;
         $this->load();
     }
 
     /**
-     * 加载 Excel 文件
+     * 加载 Excel 文件(加载后会自动设置默认excel文件路径为当前excel文件路径)
      * 
-     * @param string $excel_path Excel 文件路径(如果不传则使用构造函数传入的路径)
+     * @param ?string $excel_path Excel 文件路径(如果不传则使用构造函数传入的路径)
+     * @param ?int $open_mode 打开模式(默认为实例化时传入的打开模式,可选值为:EXCEL_ONLY_READ,EXCEL_READ_WRITE,EXCEL_VIRTUAL)
      * @return self
      * @throws ExcelFileException
      */
-    public function load(string $excel_path=null):self {
+    public function load(?string $excel_path=null,?int $open_mode=null):self {
         $this->_excel_path=$excel_path??$this->_excel_path;
+        $this->_open_mode=$open_mode??$this->_default_open_mode;
+        if($this->_excel_path=='')
+            $this->_open_mode=self::EXCEL_VIRTUAL;
+        // 判断是否为虚拟模式,虚拟模式
+        if($this->_open_mode==self::EXCEL_VIRTUAL) {
+            $this->_spreadsheet=new Spreadsheet();
+            $this->_worksheet=$this->_spreadsheet->getActiveSheet();
+            $this->reloadPointer();
+            return $this;
+        }
+        $this->_open_mode=$open_mode??$this->_default_open_mode;
         // 判断 Excel 文件是否存在,不存在则创建
         if (!file_exists($this->_excel_path)) {
             // 判断是否允许写入
-            if (!in_array($this->open_mode,$this->allow_write_mode))
+            if (!in_array($this->_open_mode,$this->_allow_write_mode))
                 throw new ExcelFileException($this->_excel_path,ExcelFileException::EXCEL_FILE_ONLY_READ);
             $this->create($this->_excel_path);
         }
@@ -114,26 +136,29 @@ abstract class Excel implements OperateExcel,CreateExcel {
         if (!is_readable($this->_excel_path))
             throw new ExcelFileException($this->_excel_path,ExcelFileException::EXCEL_FILE_NOT_READABLE);
         // 判断是否需要检查 Excel 文件是否可写
-        if (in_array($this->open_mode,$this->allow_write_mode))
+        if (in_array($this->_open_mode,$this->_allow_write_mode))
             // 判断 Excel 文件是否可写
             if (!is_writable($this->_excel_path))
                 throw new ExcelFileException($this->_excel_path,ExcelFileException::EXCEL_FILE_NOT_WRITABLE);
-        $this->spreadsheet=IOFactory::load($this->_excel_path);
-        $this->worksheet=$this->spreadsheet->getActiveSheet();
+        $this->_spreadsheet=IOFactory::load($this->_excel_path);
+        $this->_worksheet=$this->_spreadsheet->getActiveSheet();
         $this->reloadPointer();
+        // 加载成功后设置默认excel文件路径为当前excel文件路径
+        $this->_excel_path=realpath($this->_excel_path);
         return $this;
     }
 
     /**
      * 创建 Excel 文件
      * 
-     * @param string $excel_path Excel 文件路径
+     * @param ?string $excel_path Excel 文件路径
      * @return bool
      * @throws ExcelFileException
      */
-    public function create(string $excel_path):bool {
+    public function create(?string $excel_path=null):bool {
+        $excel_path=$excel_path??$this->_excel_path;
         // 判断打开模式是否允许写入
-        if (!in_array($this->open_mode,$this->allow_write_mode))
+        if (!in_array($this->_open_mode,$this->_allow_write_mode))
             throw new ExcelFileException($excel_path,ExcelFileException::EXCEL_FILE_ONLY_READ);
         // 判断路径的上级目录是否存在且可写
         $dir=dirname($excel_path);
@@ -151,19 +176,29 @@ abstract class Excel implements OperateExcel,CreateExcel {
     /**
      * 保存 Excel 文件
      * 
+     * @param ?string $excel_path Excel 文件路径(如果不传则使用构造函数传入的路径)
      * @return bool
      * @throws ExcelFileException
      */
-    public function save():bool {
+    public function save(?string $excel_path=null):bool {
+        $this->_excel_path=$excel_path??$this->_excel_path;
+        // 判断是否为虚拟模式
+        if ($this->_open_mode==self::EXCEL_VIRTUAL) {
+            if($this->_excel_path=='')
+                throw new ExcelFileException($this->_excel_path,ExcelFileException::EXCEL_FILE_VIRTUAL);
+            // 判断excel文件是否存在,不存在则创建
+            if (!file_exists($this->_excel_path))
+                $this->create($this->_excel_path);
+        }
         try {
             // 判断是否允许写入
-            if (in_array($this->open_mode,$this->allow_write_mode)) {
+            if (in_array($this->_open_mode,$this->_allow_write_mode)) {
                 // 尝试以可读模式打开 Excel 文件, 如果打开失败则抛出异常
                 @$excel_file=fopen($this->_excel_path,'r+');
                 if ($excel_file==false)
                     throw new ExcelFileException($this->_excel_path,ExcelFileException::EXCEL_FILE_LOCKED);
                 fclose($excel_file);
-                $writer=new Xlsx($this->spreadsheet);
+                $writer=new Xlsx($this->_spreadsheet);
                 $writer->save($this->_excel_path);
                 $this->reloadPointer();
                 return true;
@@ -207,7 +242,7 @@ abstract class Excel implements OperateExcel,CreateExcel {
      */
     final protected function setCellValueByRowColumn(int $row,int $column,mixed $value):void {
         $cellAddress=self::stringFromColumnIndex($column).$row;
-        $this->worksheet->setCellValue($cellAddress,$value);
+        $this->_worksheet->setCellValue($cellAddress,$value);
     }
 
     /**
@@ -217,7 +252,7 @@ abstract class Excel implements OperateExcel,CreateExcel {
      * @param mixed $value 值
      */
     final protected function setCellValue(string $cell_address,mixed $value):void {
-        $this->worksheet->setCellValue($cell_address,$value);
+        $this->_worksheet->setCellValue($cell_address,$value);
     }
 
     /**
@@ -233,8 +268,8 @@ abstract class Excel implements OperateExcel,CreateExcel {
             $value=$this->getCellValueByRowColumn(1,$last_column);
             $last_row=$value==null?0:1;
         }
-        $this->pointer['row']=$last_row+1;
-        $this->pointer['column']=1;
+        $this->_pointer['row']=$last_row+1;
+        $this->_pointer['column']=1;
     }
 
     /**
@@ -245,8 +280,8 @@ abstract class Excel implements OperateExcel,CreateExcel {
      */
     final public function getPointer(string $key=null):array|int {
         if ($key==null)
-            return $this->pointer;
-        return $this->pointer[$key];
+            return $this->_pointer;
+        return $this->_pointer[$key];
     }
 
     /**
@@ -257,8 +292,8 @@ abstract class Excel implements OperateExcel,CreateExcel {
      * @return self
      */
     final public function setPointer(int $row,int $column=1):self {
-        $this->pointer['row']=$row>0?$row:1;
-        $this->pointer['column']=$column>0?$column:1;
+        $this->_pointer['row']=$row>0?$row:1;
+        $this->_pointer['column']=$column>0?$column:1;
         return $this;
     }
 
@@ -268,7 +303,7 @@ abstract class Excel implements OperateExcel,CreateExcel {
      * @return int
      */
     final public function getLastRow():int {
-        return $this->worksheet->getHighestRow();
+        return $this->_worksheet->getHighestRow();
     }
 
     /**
@@ -277,7 +312,7 @@ abstract class Excel implements OperateExcel,CreateExcel {
      * @return int
      */
     final public function getLastColumn():int {
-        $last_column=$this->worksheet->getHighestColumn();
+        $last_column=$this->_worksheet->getHighestColumn();
         return self::columnIndexFromString($last_column);
     }
 
@@ -288,7 +323,7 @@ abstract class Excel implements OperateExcel,CreateExcel {
      * @return Cell
      */
     final public function getCell(string $cell_address):Cell {
-        return $this->worksheet->getCell($cell_address);
+        return $this->_worksheet->getCell($cell_address);
     }
 
     /**

@@ -46,6 +46,18 @@ class Main {
             // Excel::setReturnNullCell(bool $return_null_cell=true);
             // 例如:
             // print_r($Excel->setReturnNullCell()->read());
+
+            // 下面是一个切换Excel文件的例子
+            // $Excel->load(dirname(__DIR__).'/cache/temp2.xlsx',Excel::EXCEL_READ_WRITE);
+
+            // 新的Excel类使用了众多机制,例如:
+            // 初始化Excel类时,如果不传入文件路径,则会自动进入虚拟模式
+            // 虚拟模式下,保存文件时,如果不传入文件路径,则会抛出异常
+            // load方法也可以加载一个虚拟的Excel文件,只需要在路径传入空字符“ '' ”即可(空字符不等同于“null”)
+            // 例如:
+            // $Excel=new Excel('',Excel::EXCEL_READ_WRITE); // $Excel=new Excel(); 也是可以的
+            // 加载一个虚拟的Excel文件
+            // $Excel->load('',Excel::EXCEL_READ_WRITE);
         } catch (Exception $error) {
             echo  $error->getMessage().PHP_EOL;
         }

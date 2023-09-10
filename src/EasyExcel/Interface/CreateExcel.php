@@ -3,7 +3,7 @@
 namespace Boringmj\EasyExcel\Interface;
 
 /**
- * 操作 Excel 基础接口
+ * Excel 创建基础接口
  * 
  * @package Boringmj\EasyExcel\Interface
  * @since 1.0.0

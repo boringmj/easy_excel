@@ -45,6 +45,11 @@ class ExcelFileException extends Exception {
     const EXCEL_FILE_LOCKED=10105;
 
     /**
+     * Excel 文件虚拟模式
+     */
+    const EXCEL_FILE_VIRTUAL=10106;
+
+    /**
      * Excel 文件异常代码对应的错误信息
      */
     public static array $error_message=[
@@ -53,7 +58,8 @@ class ExcelFileException extends Exception {
         self::EXCEL_FILE_NOT_READABLE=>'Excel 文件不可读',
         self::EXCEL_FILE_NOT_WRITABLE=>'Excel 文件不可写',
         self::EXCEL_FILE_ONLY_READ=>'Excel 以只读模式打开不可创建或写入',
-        self::EXCEL_FILE_LOCKED=>'Excel 文件被其他程序占用'
+        self::EXCEL_FILE_LOCKED=>'Excel 文件被其他程序占用',
+        self::EXCEL_FILE_VIRTUAL=>'Excel 文件虚拟模式不可保存'
     ];
 
     /**
