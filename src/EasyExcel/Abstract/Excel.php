@@ -101,7 +101,7 @@ abstract class Excel implements OperateExcel,CreateExcel {
      * @return self
      * @throws ExcelFileException
      */
-    protected function load(string $excel_path=null):self {
+    public function load(string $excel_path=null):self {
         $this->_excel_path=$excel_path??$this->_excel_path;
         // 判断 Excel 文件是否存在,不存在则创建
         if (!file_exists($this->_excel_path)) {
