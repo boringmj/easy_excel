@@ -97,10 +97,12 @@ abstract class Excel implements OperateExcel,CreateExcel {
     /**
      * 加载 Excel 文件
      * 
+     * @param string $excel_path Excel 文件路径(如果不传则使用构造函数传入的路径)
      * @return self
      * @throws ExcelFileException
      */
-    protected function load():self {
+    protected function load(string $excel_path=null):self {
+        $this->_excel_path=$excel_path??$this->_excel_path;
         // 判断 Excel 文件是否存在,不存在则创建
         if (!file_exists($this->_excel_path)) {
             // 判断是否允许写入
