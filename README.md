@@ -1,4 +1,6 @@
 # Easy_Excel
+## 写在前面
+本项目只是基于 [phpoffice/phpspreadsheet](https://packagist.org/packages/phpoffice/phpspreadsheet) 的二次封装, 如果您需要更全面的 Excel 文件处理库, 可以前往 [phpoffice/phpspreadsheet](https://packagist.org/packages/phpoffice/phpspreadsheet) 查看详情
 ## 该如何开始?
 在开始之前,您应该需要注意\
 本项目使用了 `PHP 8.0.0` 的语法结构, 所以您需要保证您的 PHP 版本不低于 `8.0.0`\
