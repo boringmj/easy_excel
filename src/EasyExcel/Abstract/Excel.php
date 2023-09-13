@@ -18,7 +18,7 @@ use PhpOffice\PhpSpreadsheet\Cell\Cell;
  * 
  * @package Boringmj\EasyExcel\Abstract
  * @since 1.0.0
- * @version 1.0.2
+ * @version 1.0.3
  * @see \Boringmj\EasyExcel\Interface\Excel
  */
 abstract class Excel implements OperateExcel,CreateExcel {
@@ -346,6 +346,75 @@ abstract class Excel implements OperateExcel,CreateExcel {
     final public function getCellValueByRowColumn(int $row,int $column):mixed {
         $cellAddress=self::stringFromColumnIndex($column).$row;
         return $this->getCellValue($cellAddress);
+    }
+
+    /**
+     * 设置某个单元格加粗
+     * 
+     * @param string $cell_address 单元格地址
+     * @return self
+     */
+    final public function setCellBold(string $cell_address):self {
+        $this->_worksheet->getStyle($cell_address)->getFont()->setBold(true);
+        return $this;
+    }
+
+    /**
+     * 设置某个单元格对齐方式
+     * 
+     * @param string $cell_address 单元格地址
+     * @param string $align 对齐方式(使用“-”分割, `horizontal-vertical`, 水平方向可选值为:general,left,center,right,fill,justify,centerContinuous,distributed, 垂直方向可选值为:top,bottom,center,justify,distributed)
+     * @return self
+     */
+    final public function setCellAlign(string $cell_address,string $align):self {
+        $align=explode('-',$align);
+        $horizontal=$align[0]??'general';
+        $vertical=$align[1]??'top';
+        $this->_worksheet->getStyle($cell_address)->getAlignment()->setHorizontal($horizontal);
+        $this->_worksheet->getStyle($cell_address)->getAlignment()->setVertical($vertical);
+        return $this;
+    }
+
+    /**
+     * 批量设置单元格的值
+     * 
+     * @param array $data 数据(二维数组)
+     * @param int $row 起始行
+     * @param int $column 起始列
+     * @return self
+     */
+    final public function setCellValues(array $data,int $row=1,int $column=1):self {
+        $this->_worksheet->fromArray($data,null,self::stringFromColumnIndex($column).$row);
+        return $this;
+    }
+
+    /**
+     * 将单元格地址转为行列号
+     * 
+     * @param string $cell_address 单元格地址
+     * @return array
+     */
+    final public function cellAddressToRowColumn(string $cell_address):array {
+        $cell_address=Coordinate::coordinateFromString($cell_address);
+        return array(
+            'row'=>$cell_address[1],
+            'column'=>$cell_address[0]
+        );
+    }
+
+    /**
+     * 将某一行单元格加粗
+     * 
+     * @param int $row 行
+     * @param int $start_column 起始列
+     * @param int $end_column 结束列
+     * @return self
+     */
+    final public function setRowBold(int $row,int $start_column=1,int $end_column=0):self {
+        $end_column=$end_column==0?$this->getLastColumn():$end_column;
+        for ($column=$start_column;$column<=$end_column;$column++)
+            $this->setCellBold(self::stringFromColumnIndex($column).$row);
+        return $this;
     }
 
 }

@@ -26,12 +26,12 @@ class Main {
             $Excel->write([
                 'A6'=>'A6',
                 'G10'=>'G10'
-            ])->save();
+            ])->bold('A6')->save();
             // 按行写入数据并保存
             $Excel->write([
                 ['a','b','c'],
                 ['d','e','f']
-            ])->save();
+            ])->bold(11,12)->save();
             // 下面是一个复杂的例子
             // $Excel->write('A1',array(
             //     'A2'=>'A2',
@@ -43,9 +43,9 @@ class Main {
             // ))->save();
             print_r($Excel->read());
             // 如果需要返回空单元格,则使用下面的方式设置(注意,设置后只在读取时有效,读取完毕后会自动设置为 false)
-            // Excel::setReturnNullCell(bool $return_null_cell=true);
+            // Excel::returnNullCell(bool $return_null_cell=true);
             // 例如:
-            // print_r($Excel->setReturnNullCell()->read());
+            // print_r($Excel->returnNullCell()->read());
 
             // 下面是一个切换Excel文件的例子
             // $Excel->load(dirname(__DIR__).'/cache/temp2.xlsx',Excel::EXCEL_READ_WRITE);

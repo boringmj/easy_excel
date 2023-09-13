@@ -9,7 +9,7 @@ use Boringmj\EasyExcel\Abstract\Excel as AbstractExcel;
  * 
  * @package Boringmj\EasyExcel
  * @since 1.0.0
- * @version 1.0.0
+ * @version 1.0.1
  */
 class Excel extends AbstractExcel {
 
@@ -90,21 +90,27 @@ class Excel extends AbstractExcel {
     /**
      * 设置单元格加粗
      * 
-     * @param array ...$data 数据
+     * @param mixed ...$data 数据
      * @return self
      */
-    public function bold(array ...$data):self {
+    public function bold(mixed ...$data):self {
+        foreach ($data as $value) {
+            if (is_int($value))
+                parent::setRowBold($value);
+            elseif (is_string($value))
+                parent::setCellBold($value);
+        }
         return $this;
     }
 
     /**
      * 设置单元格对齐方式
      * 
-     * @param string $align 对齐方式
-     * @param array ...$data 数据
+     * @param mixed ...$data 数据
      * @return self
      */
-    public function ailgn(string $align,array ...$data):self {
+    public function ailgn(mixed ...$data):self {
+        // 目前还没有想好支持什么样的语法,就先空置着吧
         return $this;
     }
 

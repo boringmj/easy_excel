@@ -7,12 +7,12 @@ namespace Boringmj\EasyExcel\Interface;
  * 
  * @package Boringmj\EasyExcel\Interface
  * @since 1.0.0
- * @version 1.0.1
+ * @version 1.0.2
  * @method self write(mixed ...$data) 将数据写入 Excel 文件
  * @method bool save() 将数据保存到 Excel 文件
  * @method array read() 从 Excel 文件中读取数据
- * @method self bold(array ...$data) 设置单元格对齐方式
- * @method self ailgn(string $align,array ...$data) 设置单元格对齐方式
+ * @method self bold(mixed ...$data) 设置单元格加粗
+ * @method self ailgn(mixed ...$data) 设置单元格对齐方式
  */
 interface OperateExcel {
 
@@ -42,19 +42,18 @@ interface OperateExcel {
     /**
      * 设置单元格对齐方式
      * 
-     * @param array ...$data 数据
+     * @param mixed ...$data 数据
      * @return self
      */
-    public function bold(array ...$data):self;
+    public function bold(mixed ...$data):self;
 
 
     /**
      * 设置单元格对齐方式
      * 
-     * @param string $align 对齐方式
-     * @param array ...$data 数据
+     * @param mixed ...$data 数据
      * @return self
      */
-    public function ailgn(string $align,array ...$data):self;
+    public function ailgn(mixed ...$data):self;
 
 }
